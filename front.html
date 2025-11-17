@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cambridge Exam Trainer</title>
+    
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, 
+                         Helvetica, Arial, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        #trainer-container {
+            width: 100%;
+            max-width: 650px;
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            padding: 25px 30px;
+            box-sizing: border-box; /* Ensures padding doesn't affect width */
+        }
+        h1 {
+            text-align: center;
+            color: #005a9c;
+            margin-top: 0;
+            margin-bottom: 20px;
+        }
+        .question-part {
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+            line-height: 1.5;
+        }
+        .question-part strong {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+        }
+        #prompt-sentence {
+            font-weight: bold;
+            color: #004a80;
+        }
+        #answer-input {
+            width: 100%;
+            padding: 12px;
+            font-size: 1rem;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            box-sizing: border-box; /* Important for 100% width */
+            margin-top: 10px;
+        }
+        #answer-input:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0,123,255,0.2);
+        }
+        .button-container {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        button {
+            padding: 12px 20px;
+            font-size: 1rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+        }
+        button:active {
+            transform: scale(0.98);
+        }
+        #check-btn {
+            background-color: #007bff;
+            color: white;
+            flex-grow: 1; /* Takes up more space */
+        }
+        #check-btn:hover {
+            background-color: #0056b3;
+        }
+        #next-btn {
+            background-color: #28a745;
+            color: white;
+            flex-grow: 1;
+        }
+        #next-btn:hover {
+            background-color: #218838;
+        }
+        #feedback-message {
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 6px;
+            display: none; /* Hidden by default */
+        }
+        #feedback-message.correct {
+            background-color: #e6f7ec;
+            color: #218838;
+            display: block;
+        }
+        #feedback-message.incorrect {
+            background-color: #fdecea;
+            color: #dc3545;
+            display: block;
+        }
+        #correct-answer {
+            background-color: #f1f1f1;
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 15px;
+            font-size: 1rem;
+            display: none; /* Hidden by default */
+        }
+        #score-display {
+            text-align: center;
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #555;
+            margin-top: 25px;
+            border-top: 1px solid #eee;
+            padding-top: 15px;
+        }
+        /* --- ADD THESE NEW STYLES --- */
+
+/* Style for the new finish button */
+#finish-btn {
+    background-color: #6c757d; /* A neutral gray */
+    color: white;
+    flex-grow: 1;
+    margin-left: 10px; /* Add some space */
+}
+#finish-btn:hover {
+    background-color: #5a6268;
+}
+
+/* Make the button container fit all three buttons */
+.button-container {
+    gap: 10px; /* Adds space between buttons */
+}
+
+/* Style for the new score display items */
+#score-display {
+    font-size: 1rem; /* Make it a bit smaller to fit */
+    font-weight: bold;
+    color: #555;
+    margin-top: 25px;
+    border-top: 1px solid #eee;
+    padding-top: 15px;
+    text-align: center;
+    /* The new spans will inherit this */
+}
+
+/* --- Styles for the Recap Modal --- */
+
+#recap-modal {
+    display: none; /* Hidden by default */
+    position: fixed; /* Stay in place */
+    z-index: 100; /* On top of everything */
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgba(0, 0, 0, 0.6); /* Black overlay */
+}
+
+#recap-content {
+    background-color: #fefefe;
+    margin: 10% auto; /* 10% from top, centered */
+    padding: 25px 30px;
+    border-radius: 10px;
+    width: 90%;
+    max-width: 700px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+#recap-content h2 {
+    text-align: center;
+    color: #005a9c;
+    margin-top: 0;
+}
+
+#mistakes-list {
+    list-style-type: none;
+    padding-left: 0;
+    max-height: 300px; /* Make list scrollable */
+    overflow-y: auto;
+    border-top: 1px solid #eee;
+    border-bottom: 1px solid #eee;
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+#mistakes-list li {
+    background-color: #fdecea;
+    padding: 12px;
+    border-radius: 6px;
+    margin-bottom: 10px;
+    line-height: 1.5;
+}
+
+#mistakes-list strong {
+    color: #dc3545; /* Red for incorrect */
+    display: block;
+}
+
+#mistakes-list em {
+    color: #218838; /* Green for correct */
+    display: block;
+    margin-top: 5px;
+}
+
+#mistakes-list .original-q {
+    font-size: 0.9rem;
+    color: #555;
+    font-style: italic;
+}
+
+#restart-btn {
+    background-color: #28a745;
+    color: white;
+    padding: 12px 20px;
+    font-size: 1rem;
+    font-weight: bold;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    display: block; /* Make it full width */
+    width: 100%;
+    margin-top: 20px;
+}
+
+#restart-btn:hover {
+    background-color: #218838;
+}
+    </style>
+</head>
+
+<body>
+
+    <div id="trainer-container">
+        <h1>USE OF ENGLISH</h1>
+        
+        <div class="question-part">
+            <strong>Original:</strong>
+            <span id="original-sentence"></span>
+        </div>
+        
+        <div class="question-part">
+            <strong>Prompt:</strong>
+            <span id="prompt-sentence"></span>
+        </div>
+
+        <input type="text" id="answer-input" placeholder="Type your answer here...">
+        
+       <div class="button-container">
+    <button id="check-btn">Check Answer</button>
+    <button id="next-btn" style="display: none;">Next Question</button>
+
+    <button id="finish-btn">Finish</button>
+</div>
+        
+        <div id="feedback-message"></div>
+        <div id="correct-answer"></div>
+
+        <div id="score-display">
+    Score: <span id="score">0</span> / <span id="total">0</span> |
+    Percentage: <span id="percentage">0</span>% |
+    Streak: <span id="streak">0</span> in a row
+</div>
+    </div>
+<div id="recap-modal">
+    <div id="recap-content">
+        <h2>Session Recap</h2>
+        <h3 id="final-score-summary">Final Score: 0 / 0 (0%)</h3>
+
+        <h3>Your Mistakes:</h3>
+        <ul id="mistakes-list">
+            </ul>
+
+        <button id="restart-btn">Restart Session</button>
+    </div>
+</div>
+  <script>
+    // --- YOUR QUESTION DATABASE ---
+        const questions = [
+            // Your original 5 questions
+            [
+                "James, told me that, finally, work was getting better",
+                "James said ____ at work at last. LOOKING",
+                "that things were looking better"
+            ],
+            [
+                "They didn't sell many tickets for the concert.",
+                "Hardly ____ for the concert. SOLD",
+                "any tickets were sold"
+            ],
+            [
+                "It's a shame I'm not able to go on holiday.",
+                "I wish ____ on holiday. GO",
+                "I was able to go"
+            ],
+            [
+                "You must not open this door on any account.",
+                "On no ____ this door. BE",
+                "account is this door to be"
+            ],
+            [
+                "I'm sure he didn't mean to shout at you.",
+                "He can't ____ at you. MEANT",
+                "have meant to shout"
+            ],
+
+            // Part 4 questions
+            [
+                "You must not tell anyone about the project under any circumstances.",
+                "On ____ tell anyone about the project. ACCOUNT",
+                "no account must you"
+            ],
+            [
+                "I'm sure they didn't see us; they walked straight past.",
+                "They ____ us; they walked straight past. HAVE",
+                "can't have seen"
+            ],
+            [
+                "If you hadn't helped me, I would never have finished the report on time.",
+                "Had ____ your help, I would never have finished the report on time. BEEN",
+                "it not been for"
+            ],
+            [
+                "It's a shame I didn't travel more when I was younger.",
+                "I wish ____ more when I was younger. HAD",
+                "I had travelled"
+            ],
+            [
+                "People believe that the manager is planning to resign next week.",
+                "The manager ____ planning to resign next week. BELIEVED",
+                "is believed to be"
+            ],
+            [
+                "The new restaurant is much better than the old one.",
+                "The old restaurant is ____ as the new one. NEARLY",
+                "not nearly as good"
+            ],
+            [
+                "I have no intention of discussing this matter any further.",
+                "I do ____ this matter any further. INTEND",
+                "not intend to discuss"
+            ],
+            [
+                "She started learning Spanish four years ago.",
+                "She ____ Spanish for four years now. BEEN",
+                "has been learning"
+            ],
+            [
+                "I find it very difficult to tolerate his constant complaining.",
+                "I find it very difficult ____ his constant complaining. PUT",
+                "to put up with"
+            ],
+            [
+                "He finally managed to buy his own apartment after saving for years.",
+                "He finally ____ buying his own apartment after saving for years. SUCCEEDED",
+                "succeeded in"
+            ],
+
+            // Part 1 questions
+            [
+                "The new trade deal will ____ into force from the first of next month.",
+                "A) come B) get C) go D) put. (PART 1)",
+                "come"
+            ],
+            [
+                "After weeks of negotiating, they finally ____ a decision to sell the company.",
+                "A) arrived B) reached C) achieved D) struck. (PART 1)",
+                "reached"
+            ],
+            [
+                "The professor's theory is interesting, but it's not ____ by any solid evidence.",
+                "A) supported B) strengthened C) confirmed D) held. (PART 1)",
+                "supported"
+            ],
+            [
+                "I only ____ a glance at the report, so I can't tell you much about it.",
+                "A) threw B) flung C) cast D) tossed. (PART 1)",
+                "cast"
+            ],
+            [
+                "It is ____ advised that you book your tickets well in advance.",
+                "A) firmly B) strongly C) highly D) deeply. (PART 1)",
+                "strongly"
+            ],
+            [
+                "The noise from the construction site is on the ____ of becoming unbearable.",
+                "A) verge B) rim C) edge D) point. (PART 1)",
+                "verge"
+            ],
+
+            // Part 2 questions
+            [
+                "The modern concept of a 'gap year' is (1) ____ that is often misunderstood.",
+                "____. (PART 2)",
+                "one"
+            ],
+        ];
+        // Get references to all the HTML elements we need
+        const originalSentenceEl = document.getElementById("original-sentence");
+        const promptSentenceEl = document.getElementById("prompt-sentence");
+        const answerInputEl = document.getElementById("answer-input");
+        const checkBtn = document.getElementById("check-btn");
+        const nextBtn = document.getElementById("next-btn");
+        const feedbackEl = document.getElementById("feedback-message");
+        const correctAnswerEl = document.getElementById("correct-answer");
+        const scoreEl = document.getElementById("score");
+        const totalEl = document.getElementById("total");
+        const percentageEl = document.getElementById("percentage");
+        const streakEl = document.getElementById("streak");
+        const finishBtn = document.getElementById("finish-btn");
+        const recapModal = document.getElementById("recap-modal");
+        const finalScoreSummaryEl = document.getElementById("final-score-summary");
+        const mistakesListEl = document.getElementById("mistakes-list");
+        const restartBtn = document.getElementById("restart-btn");
+        const trainerContainer = document.getElementById("trainer-container"); 
+        
+        // Game state variables
+        let score = 0;
+        let total = 0;
+        let currentCorrectAnswer = "";
+        let currentStreak = 0;
+        let mistakes = []; // This will store all incorrect answers
+
+        // --- ADD THESE TWO NEW VARIABLES ---
+        let retryPool = []; // Pool for questions answered incorrectly
+        let currentQuestion = []; // Stores the full [original, prompt, answer] array
+
+        // Function to load a new (random) question
+        function loadQuestion() {
+            if (questions.length === 0) {
+                document.getElementById("trainer-container").innerHTML = "<h1>Error: No questions in database!</h1>";
+                return;
+            }
+
+            let questionToLoad;
+
+            // --- NEW LOGIC: PRIORITIZE RETRY POOL ---
+            // Give a 75% chance to pick from the retry pool if it's not empty
+            if (retryPool.length > 0 && Math.random() < 0.75) {
+                console.log("Loading from retry pool...");
+                const retryIndex = Math.floor(Math.random() * retryPool.length);
+                questionToLoad = retryPool[retryIndex];
+            } else {
+                // Otherwise, pick a random question from the main list
+                console.log("Loading from main list...");
+                const mainIndex = Math.floor(Math.random() * questions.length);
+                questionToLoad = questions[mainIndex];
+            }
+            
+            // Store the full question array globally
+            currentQuestion = questionToLoad;
+            
+            // Deconstruct the question array
+            const [original, prompt, answer] = questionToLoad;
+
+            // Display the question
+            originalSentenceEl.textContent = original;
+            promptSentenceEl.textContent = prompt;
+            
+            // Save the correct answer
+            currentCorrectAnswer = answer;
+
+            // Reset the UI
+            answerInputEl.value = "";
+            answerInputEl.disabled = false; // Enable input
+            feedbackEl.style.display = "none";
+            correctAnswerEl.style.display = "none";
+            
+            checkBtn.style.display = "block"; // Show Check button
+            nextBtn.style.display = "none";  // Hide Next button
+            
+            answerInputEl.focus(); // Put cursor in input box
+        }
+
+        // Function to check the user's answer
+        function checkAnswer() {
+            total++;
+            const userAnswer = answerInputEl.value.trim(); // Get and trim user's answer
+            
+            // Check if the current question is in the retry pool
+            const indexInRetryPool = retryPool.indexOf(currentQuestion);
+
+            if (userAnswer === currentCorrectAnswer) {
+                // --- CORRECT ---
+                score++;
+                currentStreak++; // Increase streak
+                feedbackEl.textContent = "✅ Correct!";
+                feedbackEl.className = "correct";
+                
+                // If it was in the retry pool, remove it now that you got it right
+                if (indexInRetryPool > -1) {
+                    retryPool.splice(indexInRetryPool, 1);
+                    console.log("Removed from retry pool.");
+                }
+
+            } else {
+                // --- INCORRECT ---
+                currentStreak = 0; // Reset streak
+                feedbackEl.textContent = "❌ Incorrect.";
+                feedbackEl.className = "incorrect";
+                
+                // Show the correct answer
+                correctAnswerEl.innerHTML = `<strong>Correct Answer:</strong> ${currentCorrectAnswer}`;
+                correctAnswerEl.style.display = "block";
+                
+                // Store the mistake for the recap screen
+                mistakes.push({
+                    original: originalSentenceEl.textContent,
+                    prompt: promptSentenceEl.textContent,
+                    user: userAnswer,
+                    correct: currentCorrectAnswer
+                });
+                
+                // Add to retry pool if it's not already in there
+                if (indexInRetryPool === -1) {
+                    retryPool.push(currentQuestion);
+                    console.log("Added to retry pool.");
+                }
+            }
+            
+            // Update score display
+            scoreEl.textContent = score;
+            totalEl.textContent = total;
+            
+            // UPDATE NEW DISPLAYS
+            const percentage = total === 0 ? 0 : Math.round((score / total) * 100);
+            percentageEl.textContent = percentage;
+            streakEl.textContent = currentStreak;
+
+            // Update UI
+            answerInputEl.disabled = true; // Disable input
+            checkBtn.style.display = "none"; // Hide Check button
+            nextBtn.style.display = "block";  // Show Next button
+            nextBtn.focus(); // Focus on the Next button
+        }
+
+        // Function to show the final recap
+        function showRecap() {
+            // Hide the main quiz
+            trainerContainer.style.display = "none";
+
+            // Calculate final score
+            const percentage = total === 0 ? 0 : Math.round((score / total) * 100);
+            finalScoreSummaryEl.textContent = `Final Score: ${score} / ${total} (${percentage}%)`;
+
+            // Clear any old mistakes
+            mistakesListEl.innerHTML = "";
+
+            // Populate the mistakes list
+            if (mistakes.length === 0) {
+                mistakesListEl.innerHTML = "<li>Congratulations, no mistakes!</li>";
+                // Adjust style for the "no mistakes" message
+                const li = mistakesListEl.querySelector('li');
+                if (li) {
+                    li.style.backgroundColor = "#e6f7ec"; // Light green
+                    li.style.color = "#218838";
+                }
+            } else {
+                mistakes.forEach(m => {
+                    const li = document.createElement("li");
+                    li.innerHTML = `
+                        <div class="original-q">${m.original}</div>
+                        <div class="original-q">${m.prompt}</div>
+                        <strong>Your answer:</strong> ${m.user || "<em>(empty)</em>"}
+                        <em>Correct answer:</em> ${m.correct}
+                    `;
+                    mistakesListEl.appendChild(li);
+                });
+            }
+
+            // Show the recap modal
+            recapModal.style.display = "block";
+        }
+
+        // Function to restart the quiz
+        function restartQuiz() {
+            // Reset game state
+            score = 0;
+            total = 0;
+            currentStreak = 0;
+            mistakes = [];
+
+            // Reset score display
+            scoreEl.textContent = "0";
+            totalEl.textContent = "0";
+            percentageEl.textContent = "0";
+            streakEl.textContent = "0";
+
+            // Hide recap modal
+            recapModal.style.display = "none";
+            
+            // Show the main quiz
+            trainerContainer.style.display = "block";
+
+            // Load a new question
+            loadQuestion();
+        }
+
+        // --- Event Listeners ---
+
+        // Load the first question when the page loads
+        document.addEventListener("DOMContentLoaded", () => {
+            // Set initial text for new elements
+            percentageEl.textContent = "0";
+            streakEl.textContent = "0";
+            loadQuestion();
+        });
+        
+        // When the "Check Answer" button is clicked
+        checkBtn.addEventListener("click", checkAnswer);
+        
+        // When the "Next Question" button is clicked
+        nextBtn.addEventListener("click", loadQuestion);
+        
+        // When the "Finish" button is clicked
+        finishBtn.addEventListener("click", showRecap);
+
+        // When the "Restart" button is clicked
+        restartBtn.addEventListener("click", restartQuiz);
+        // Allow pressing "Enter" to check the answer
+        answerInputEl.addEventListener("keydown", function(event) {
+            if (event.key === "Enter" && checkBtn.style.display === "block") {
+                checkAnswer();
+            }
+        });
+  </script>
+
+</body>
+</html>
